@@ -114,7 +114,84 @@ y_test = test_data.iloc[:,-1]
 
 ## code explain
 
-Using the data in the training set, we predicted the output for each example in the test, for k=1k=1, k=3k=3, and k=20k=20. Reported the squared error on the test set. As we can see the test error goes down while increasing k.
+### distance
+
+For our purposes we will adopt Euclidean distance and since our dataset is made of two attributes we can use the following function.
+
+```
+    @staticmethod
+    def __euclidean_distance(x1, y1, x2, y2):
+        return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+```
+
+### Weighted distance
+
+Instead of computing an average of the **k** neighbors, we can compute a weighted average of the neighbors. A common way to do this is to weight each of the neighbors by a factor of **1/d**, where **d** is its distance from the test example.  
+
+For our implementation, we chose to use weighted distance according to a paper[1](https://www.antoniomallia.it/on-implementing-k-nearest-neighbor-for-regression-in-python.html#fn:fnSarma) which proposes another improvement to the basic k-NN where the weights to nearest neighbors are given based on **Gaussian distribution**.
+
+```
+    @staticmethod
+    def gaussian(dist, sigma=1):
+        return 1./(math.sqrt(2.*math.pi)*sigma)*math.exp(-dist**2/(2*sigma**2))
+```
+
+### Initialization
+
+Given a training set, we need first to store it as we will use it at prediction time. Clearly, **k cannot be bigger than the training set itself.**
+
+```
+class kNN(object):
+
+    def __init__(self, x, y, k, weighted=False):
+        assert (k <= len(x)
+                ), "k cannot be greater than training_set length"
+        self.__x = x
+        self.__y = y
+        self.__k = k
+        self.__weighted = weighted
+```
+
+### Prediction
+
+Predicting the output for a new example **x** is conceptually trivial. All we need to do is:
+
+- iterate through the examples
+- measure the distance from each one to **x**
+- keep the best **k**
+
+Depending if we are doing classification or regression we would treat those **k** examples differently. In this case, we will do regression, so our prediction will be just the average of the samples.
+
+```
+    def predict(self, test_set):
+        predictions = []
+        for i, j in test_set.values:
+            distances = []
+            for idx, (l, m) in enumerate(self.__x.values):
+                dist = self.__euclidean_distance(i, j, l, m)
+                distances.append((self.__y[idx], dist))
+            distances.sort(key=operator.itemgetter(1))
+            v = 0
+            total_weight = 0
+            for i in range(self.__k):
+                weight = self.gaussian(distances[i][1])
+                if self.__weighted:
+                    v += distances[i][0]*weight
+                else:
+                    v += distances[i][0]
+                total_weight += weight
+            if self.__weighted:
+                predictions.append(v/total_weight)
+            else:
+                predictions.append(v/self.__k)
+        return predictions
+```
+
+If we are happy with an implementation that takes **O(N)** execution time, then that is the end of the story. If not, there are possible optimization using indexes based on additional data structures, i.e. k-d trees or hash tables, which I might write about in the future.
+
+### simple k-NN result 
+
+Using the data in the training set, we predicted the output for each example in the test, for k=1, k=3, and k=20. Reported the **squared error** on the test set. As we can see the test error goes down while increasing k.
 
 ```
 from kNN import kNN
@@ -134,7 +211,7 @@ for k in [1, 3, 20]:
 > Test error with k=3: 2794.729999999999
 > Test error with k=20: 2746.1914125
 
-### Weighted k-NN
+### Weighted k-NN result 
 
 Using weighted k-NN we obtained better performance than with simple k-NN.
 

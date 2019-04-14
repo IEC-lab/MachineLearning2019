@@ -7,7 +7,7 @@ import random
 import math
 import operator
 
-def loadDataset(filename, split, trainingSet=[], testSet=[]):
+def loadDataset(filename, split, trainingSet=[], testSet=[]): # randomly split data and load data 
     with open(filename, 'rb') as csvfile:
         lines = csv.reader(csvfile)
         dataset = list(lines)
@@ -19,14 +19,14 @@ def loadDataset(filename, split, trainingSet=[], testSet=[]):
             else:
                 testSet.append(dataset[x])
 
-def euclideanDistance(instance1, instance2, length):
+def euclideanDistance(instance1, instance2, length):# use L2 distance as the metric
     distance = 0
     for x in range(length):
         distance += pow((instance1[x] - instance2[x]), 2)
     return math.sqrt(distance)
 
 
-def getNeighbors(trainingSet, testInstance, k):
+def getNeighbors(trainingSet, testInstance, k): # get the k most similar instances
     distances = []
     length = len(testInstance) - 1
     for x in range(len(trainingSet)):
@@ -38,7 +38,7 @@ def getNeighbors(trainingSet, testInstance, k):
         neighbors.append(distances[x][0])
     return neighbors
 
-def getResponse(neighbors):
+def getResponse(neighbors): # take the majority vote as the prediction
     classVotes = {}
     for x in range(len(neighbors)):
         response = neighbors[x][-1]
@@ -49,7 +49,7 @@ def getResponse(neighbors):
     sortedVotes = sorted(classVotes.iteritems(), key=operator.itemgetter(1), reverse=True)
     return sortedVotes[0][0]
 
-def getAccuracy(testSet, predictions):
+def getAccuracy(testSet, predictions): #sums the total correct predictions and returns the accuracy as a percentage of correct classifications
     correct = 0
     for x in range(len(testSet)):
         if testSet[x][-1] == predictions[x]:
